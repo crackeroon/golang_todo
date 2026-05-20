@@ -4,6 +4,12 @@ export
 export PROJECT_ROOT=$(shell pwd)
 
 
+todoapp-run:
+	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
+	go mod tidy && \
+	go run cmd/todoapp/main.go
+
+
 env-port-forwarder:
 	@docker compose up -d port-forwarder
 env-port-close:
