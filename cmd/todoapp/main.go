@@ -8,8 +8,11 @@ import (
 	"syscall"
 
 	core_logger "github.com/crackeroon/golang_todo/internal/core/logger"
+	core_postgres_pool "github.com/crackeroon/golang_todo/internal/core/repository/postgres/pool"
 	core_http_middleware "github.com/crackeroon/golang_todo/internal/core/transport/http/middleware"
 	core_http_server "github.com/crackeroon/golang_todo/internal/core/transport/http/server"
+	users_postgres_repository "github.com/crackeroon/golang_todo/internal/features/users/repository/postgres"
+	users_service "github.com/crackeroon/golang_todo/internal/features/users/service"
 	users_transport_http "github.com/crackeroon/golang_todo/internal/features/users/transport/http"
 	"go.uber.org/zap"
 )
@@ -27,14 +30,22 @@ func main() {
 	}
 	defer logger.Close()
 
-	logger.Debug("app started")
+	logger.Debug("initializing postgres connection pool")
+	pool, err := core_postgres_pool.NewConnectionPool(ctx, core_postgres_pool.NewConfigMust())
 
-	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(nil)
+	if err != nil {
+		logger.Fatal("failed to init postgres connection pool", zap.Error(err))
+	}
+	defer pool.Close()
 
-	usersRoutes := usersTransportHTTP.Routes()
+	logger.Debug("initializing feature", zap.String("feature", "users"))
 
-	apiVersionRouter := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
-	apiVersionRouter.RegisterRoutes(usersRoutes...)
+	userRepository := users_postgres_repository.NewUsersRepository(pool)
+	userService := users_service.NewUsersService(userRepository)
+	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(userService)
+
+	logger.Debug("initializing HTTP server")
+
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
 		logger,
@@ -43,6 +54,9 @@ func main() {
 		core_http_middleware.Panic(),
 		core_http_middleware.Trace(),
 	)
+
+	apiVersionRouter := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
+	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
 
 	httpServer.RegisterAPIRoutes(apiVersionRouter)
 
