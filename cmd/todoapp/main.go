@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	core_config "github.com/crackeroon/golang_todo/internal/config"
 	core_logger "github.com/crackeroon/golang_todo/internal/core/logger"
 	"github.com/crackeroon/golang_todo/internal/core/repository/postgres/pool/pqx"
 	core_http_middleware "github.com/crackeroon/golang_todo/internal/core/transport/http/middleware"
@@ -21,12 +22,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	timeZone = time.UTC
-)
-
 func main() {
-	time.Local = timeZone
+	cfg := core_config.NewConfigMust()
+	time.Local = cfg.TimeZone
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -34,7 +32,7 @@ func main() {
 	defer cancel()
 
 	logger, err := core_logger.NewLogger(core_logger.NewConfigMust())
-	logger.Debug("application TIME ZONE", zap.Any("timeZone", timeZone))
+	logger.Debug("application TIME ZONE", zap.Any("timeZone", cfg.TimeZone))
 	if err != nil {
 		fmt.Println("failed to init app logger", err)
 		os.Exit(1)

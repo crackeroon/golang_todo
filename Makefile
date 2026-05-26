@@ -45,6 +45,16 @@ migrate-create:
 		-dir /migrations \
 		-seq "$(seq)"
 
+logs-cleanup:
+	@read -p "Очистить все logs файлы? [y/N]: " ans; \
+	if [ "$$ans" = "y" ]; then \
+		rm -rf ${PROJECT_ROOT}/out/logs && \
+		echo "Файлы очищены"; \
+	else \
+		echo "Очистка отменена"; \
+	fi
+
+
 migrate-action:
 	@if [ -z "$(action)" ]; then \
 		echo "Отсутствует параметр action. Пример: make migrate-action action=up"; \
