@@ -13,6 +13,9 @@ import (
 	"github.com/crackeroon/golang_todo/internal/core/repository/postgres/pool/pqx"
 	core_http_middleware "github.com/crackeroon/golang_todo/internal/core/transport/http/middleware"
 	core_http_server "github.com/crackeroon/golang_todo/internal/core/transport/http/server"
+	statistics_postgres_repository "github.com/crackeroon/golang_todo/internal/features/statistics/repository/postgres"
+	statistics_service "github.com/crackeroon/golang_todo/internal/features/statistics/service"
+	statistics_transport_http "github.com/crackeroon/golang_todo/internal/features/statistics/transport/http"
 	tasks_postgres_repository "github.com/crackeroon/golang_todo/internal/features/tasks/repository/postgres"
 	tasks_service "github.com/crackeroon/golang_todo/internal/features/tasks/service"
 	tasks_transport_http "github.com/crackeroon/golang_todo/internal/features/tasks/transport/http"
@@ -60,6 +63,12 @@ func main() {
 	taskService := tasks_service.NewTasksService(taskRepository)
 	tasksTransportHTTP := tasks_transport_http.NewTasksHTTPHandler(taskService)
 
+	logger.Debug("initializing feature", zap.String("feature", "statistics"))
+
+	statisticsRepository := statistics_postgres_repository.NewStatisticsRepository(pool)
+	statisticsService := statistics_service.NewStatisticsService(statisticsRepository)
+	statisticsTransportHTTP := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService)
+
 	logger.Debug("initializing HTTP server")
 
 	httpServer := core_http_server.NewHTTPServer(
@@ -73,6 +82,7 @@ func main() {
 	apiVersionRouterV1 := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
 	apiVersionRouterV1.RegisterRoutes(usersTransportHTTP.Routes()...)
 	apiVersionRouterV1.RegisterRoutes(tasksTransportHTTP.Routes()...)
+	apiVersionRouterV1.RegisterRoutes(statisticsTransportHTTP.Routes()...)
 
 	/* Example of usage apiVersionRouterV2 with separate Middleware
 	apiVersionRouterV2 := core_http_server.NewAPIVersionRouter(
