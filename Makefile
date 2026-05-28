@@ -3,6 +3,11 @@ export
 
 export PROJECT_ROOT=$(shell pwd)
 
+ps:
+	@docker compose ps
+
+todoapp-deploy:
+	@docker compose up -d --build todoapp
 
 todoapp-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
