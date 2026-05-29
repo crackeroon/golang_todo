@@ -6,6 +6,9 @@ export PROJECT_ROOT=$(shell pwd)
 ps:
 	@docker compose ps
 
+todoapp-undeploy:
+	@docker compose down todoapp
+
 todoapp-deploy:
 	@docker compose up -d --build todoapp
 
